@@ -8,7 +8,11 @@
   },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/gerar",
+      "destination": "/api"
+    },
+    {
+      "source": "/health",
       "destination": "/api"
     }
   ]
