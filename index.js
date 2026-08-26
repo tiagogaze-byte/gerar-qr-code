@@ -17,7 +17,7 @@ app.get('/gerar', async (req, res) => {
       });
     }
 
-    logger.info(`Gerando QR code para: ${texto}`);
+    logger.info('Gerando QR code para: ' + texto);
     
     const qrCode = await qrGenerator.toBuffer(texto);
     
@@ -25,9 +25,9 @@ app.get('/gerar', async (req, res) => {
     res.setHeader('Content-Length', qrCode.length);
     res.send(qrCode);
     
-    logger.info(`QR code gerado com sucesso para: ${texto}`);
+    logger.info('QR code gerado com sucesso para: ' + texto);
   } catch (erro) {
-    logger.error(`Erro ao gerar QR code: ${erro.message}`);
+    logger.error('Erro ao gerar QR code: ' + erro.message);
     res.status(500).json({ 
       erro: 'Erro ao gerar QR code',
       detalhes: erro.message 
@@ -40,11 +40,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Export para Vercel e local
-if (process.env.NODE_ENV !== 'production') {
+// Inicia servidor localmente se não estiver em produção
+if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    logger.info(`Servidor rodando em http://localhost:${PORT}`);
+    logger.info('Servidor rodando em http://localhost:' + PORT);
   });
 }
 
