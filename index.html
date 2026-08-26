@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de QR Code</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 30px;
+                padding: 30px 20px;
+            }
+        }
+
+        .section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #999;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-btn:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        input[type="url"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="url"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-generate:active {
+            transform: translateY(0);
+        }
+
+        .btn-download {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-download:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-download:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preview-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-box {
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1;
+            background: #f9f9f9;
+            border: 2px dashed #e0e0e0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .preview-box.loading {
+            background: #f0f0f0;
+        }
+
+        .preview-box img {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+        }
+
+        .preview-box img.visible {
+            display: block;
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            color: #999;
+        }
+
+        .preview-placeholder svg {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .preview-placeholder p {
+            font-size: 14px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f0f0f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        .loading-spinner.show {
+            display: block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .info-box {
+            background: #f5f7ff;
+            border: 1px solid #dde5ff;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 13px;
+            color: #555;
+            margin-top: 15px;
+        }
+
+        .error-message {
+            background: #ffe5e5;
+            border: 1px solid #ffcccc;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 13px;
+            color: #d32f2f;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .country-select {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .country-btn {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .country-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .country-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 13px;
+            color: #2e7d32;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="section">
+            <h1>🎯 Gerador QR Code</h1>
+            <p class="subtitle">Crie QR codes em segundos</p>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('text')">Texto</button>
+                <button class="tab-btn" onclick="switchTab('url')">URL</button>
+                <button class="tab-btn" onclick="switchTab('whatsapp')">WhatsApp</button>
+                <button class="tab-btn" onclick="switchTab('email')">Email</button>
+            </div>
+
+            <div id="text" class="tab-content active">
+                <div class="form-group">
+                    <label>Seu Texto</label>
+                    <textarea id="textInput" placeholder="Digite o texto que deseja codificar...">Olá Mundo</textarea>
+                </div>
+                <div class="info-box">💡 Máximo de 2953 caracteres</div>
+            </div>
+
+            <div id="url" class="tab-content">
+                <div class="form-group">
+                    <label>URL do Site</label>
+                    <input type="url" id="urlInput" placeholder="https://seu-site.com" value="https://exemplo.com">
+                </div>
+                <div class="info-box">🔗 Cole qualquer link e o QR Code abrirá esse site</div>
+            </div>
+
+            <div id="whatsapp" class="tab-content">
+                <div class="form-group">
+                    <label>Código do País</label>
+                    <div class="country-select">
+                        <button class="country-btn selected" onclick="selectCountry('55', this)">🇧🇷 Brasil (+55)</button>
+                        <button class="country-btn" onclick="selectCountry('1', this)">🇺🇸 EUA (+1)</button>
+                        <button class="country-btn" onclick="selectCountry('34', this)">🇪🇸 Espanha (+34)</button>
+                        <button class="country-btn" onclick="selectCountry('44', this)">🇬🇧 UK (+44)</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Número de Telefone</label>
+                    <input type="text" id="whatsappNumber" placeholder="Apenas números (ex: 11987654321)">
+                </div>
+                <div class="form-group">
+                    <label>Mensagem (opcional)</label>
+                    <textarea id="whatsappMessage" placeholder="Digite a mensagem que será enviada..."></textarea>
+                </div>
+                <div class="info-box">💬 Escanear abrirá o WhatsApp com a mensagem pronta</div>
+            </div>
+
+            <div id="email" class="tab-content">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="text" id="emailAddress" placeholder="seu@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Assunto (opcional)</label>
+                    <input type="text" id="emailSubject" placeholder="Assunto do email">
+                </div>
+                <div class="form-group">
+                    <label>Mensagem (opcional)</label>
+                    <textarea id="emailBody" placeholder="Corpo do email..."></textarea>
+                </div>
+                <div class="info-box">📧 Escanear abrirá o cliente de email pronto para enviar</div>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage">✓ QR Code gerado com sucesso!</div>
+
+            <div class="button-group">
+                <button class="btn-generate" onclick="generateQR()">Gerar QR Code</button>
+                <button class="btn-download" id="downloadBtn" onclick="downloadQR()" disabled>Baixar</button>
+            </div>
+        </div>
+
+        <div class="section preview-section">
+            <h2 style="color: #333; font-size: 16px; margin-bottom: 20px; text-align: center;">Visualização</h2>
+            <div class="preview-box" id="previewBox">
+                <div class="loading-spinner" id="spinner"></div>
+                <div class="preview-placeholder" id="placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <p>Seu QR Code aparecerá aqui</p>
+                </div>
+                <img id="qrImage" alt="QR Code">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/gerar';
+        let currentCountryCode = '55';
+        let lastQRText = '';
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function selectCountry(code, element) {
+            currentCountryCode = code;
+            document.querySelectorAll('.country-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            element.classList.add('selected');
+        }
+
+        function getQRText() {
+            const activeTab = document.querySelector('.tab-content.active').id;
+
+            switch(activeTab) {
+                case 'text':
+                    return document.getElementById('textInput').value;
+                case 'url':
+                    return document.getElementById('urlInput').value;
+                case 'whatsapp':
+                    const number = document.getElementById('whatsappNumber').value;
+                    const message = document.getElementById('whatsappMessage').value;
+                    if (!number) return '';
+                    let whatsappText = `https://wa.me/${currentCountryCode}${number}`;
+                    if (message) whatsappText += `?text=${encodeURIComponent(message)}`;
+                    return whatsappText;
+                case 'email':
+                    const email = document.getElementById('emailAddress').value;
+                    const subject = document.getElementById('emailSubject').value;
+                    const body = document.getElementById('emailBody').value;
+                    if (!email) return '';
+                    let mailtoText = `mailto:${email}`;
+                    const params = [];
+                    if (subject) params.push(`subject=${encodeURIComponent(subject)}`);
+                    if (body) params.push(`body=${encodeURIComponent(body)}`);
+                    if (params.length) mailtoText += `?${params.join('&')}`;
+                    return mailtoText;
+            }
+            return '';
+        }
+
+        async function generateQR() {
+            const errorMsg = document.getElementById('errorMessage');
+            const successMsg = document.getElementById('successMessage');
+            const spinner = document.getElementById('spinner');
+            const placeholder = document.getElementById('placeholder');
+            const img = document.getElementById('qrImage');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            errorMsg.classList.remove('show');
+            successMsg.classList.remove('show');
+
+            const qrText = getQRText();
+
+            if (!qrText) {
+                errorMsg.textContent = '⚠️ Por favor, preencha o campo obrigatório';
+                errorMsg.classList.add('show');
+                return;
+            }
+
+            if (qrText.length > 2953) {
+                errorMsg.textContent = '❌ Texto muito longo (máximo 2953 caracteres)';
+                errorMsg.classList.add('show');
+                return;
+            }
+
+            spinner.classList.add('show');
+            placeholder.style.display = 'none';
+            img.classList.remove('visible');
+
+            try {
+                const encodedText = encodeURIComponent(qrText);
+                const url = `${API_BASE}?texto=${encodedText}`;
+
+                img.src = url;
+                lastQRText = qrText;
+
+                img.onload = () => {
+                    spinner.classList.remove('show');
+                    img.classList.add('visible');
+                    downloadBtn.disabled = false;
+                    successMsg.classList.add('show');
+                };
+
+                img.onerror = () => {
+                    spinner.classList.remove('show');
+                    placeholder.style.display = 'block';
+                    errorMsg.textContent = '❌ Erro ao gerar QR Code. Tente novamente.';
+                    errorMsg.classList.add('show');
+                    downloadBtn.disabled = true;
+                };
+            } catch (error) {
+                spinner.classList.remove('show');
+                placeholder.style.display = 'block';
+                errorMsg.textContent = '❌ Erro: ' + error.message;
+                errorMsg.classList.add('show');
+                downloadBtn.disabled = true;
+            }
+        }
+
+        function downloadQR() {
+            if (!lastQRText) return;
+
+            const link = document.createElement('a');
+            link.href = document.getElementById('qrImage').src;
+            link.download = 'qrcode.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        generateQR();
+    </script>
+</body>
+</html>
